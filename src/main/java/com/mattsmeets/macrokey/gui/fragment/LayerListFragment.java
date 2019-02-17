@@ -48,7 +48,7 @@ public class LayerListFragment extends GuiListExtended {
 
 
     @SideOnly(Side.CLIENT)
-    public class KeyEntry implements GuiListExtended.IGuiListEntry {
+    public class KeyEntry extends IGuiListEntry {
         private final LayerInterface layer;
 
         private final String keyDesc;
@@ -69,6 +69,11 @@ public class LayerListFragment extends GuiListExtended {
 
             this.btnRemove = new GuiButton(1, 0, 0, 15, 20, this.removeLayerText);
             this.btnEdit = new GuiButton(2, 0, 0, 60, 20, this.editLayerText);
+        }
+
+        @Override
+        public void drawEntry(int entryWidth, int entryHeight, int mouseX, int mouseY, boolean p_194999_5_, float partialTicks) {
+
         }
 
         @Override

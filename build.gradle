@@ -1,10 +1,11 @@
 buildscript {
     repositories {
-        jcenter()
-        maven { url = "http://files.minecraftforge.net/maven" }
+        maven { url = "https://files.minecraftforge.net/maven" }
+		jcenter()
+		mavenCentral()
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
     }
 }
 
@@ -12,20 +13,29 @@ buildscript {
 plugins {
     id 'de.fuerstenau.buildconfig' version '1.1.8'
     id 'idea'
-    id 'net.minecraftforge.gradle.forge' version '2.0.2'
 }
 
-// setup external properties file
-ext.configFile = file "build.properties"
+apply plugin: 'net.minecraftforge.gradle'
 
-// read external properties file
+//apply plugin: 'net.minecraftforge.gradle'
+////Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+//apply plugin: 'idea'
+
+//version = '1.0'
+//group = 'com.mattsmeets.macrokey' // http://maven.apache.org/guides/mini/guide-naming-conventions.html
+//archivesBaseName = 'macrokey'
+
+//// setup external properties file
+ext.configFile = file "build.properties"
+//
+//// read external properties file
 configFile.withReader {
     def prop = new Properties()
     prop.load(it)
     project.ext.config = new ConfigSlurper().parse prop
 }
-
-// set default version, group and package namespace
+//
+//// set default version, group and package namespace
 version = config.mc_version + '-' + config.mod_version
 group = config.mod_group
 archivesBaseName = config.mod_name
@@ -40,22 +50,55 @@ if (!project.hasProperty('signingKeystore')) {
     version = version + '-unsigned'
 }
 
-sourceCompatibility = targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
+//sourceCompatibility = targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
 
-compileJava {
-    sourceCompatibility = targetCompatibility = '1.8'
-}
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
 
 minecraft {
-	version = "${config.mc_version}-${config.forge_version}"
-    runDir = "run"
+    // the mappings can be changed at any time, and must be in the following format.
+    // snapshot_YYYYMMDD   snapshot are built nightly.
+    // stable_#            stables are built at the discretion of the MCP team.
+    // Use non-default mappings at your own risk. they may not always work.
+    // simply re-run your setup task after changing the mappings to update your workspace.
+    mappings channel: 'snapshot', version: '20180921-1.13'
+    // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
 
-    mappings = 'stable_39'
-    makeObfSourceJar = false
+    //accessTransformer = file('my_at.cfg')
+
+    // default run configurations.
+    // these can be tweaked, removed, or duplicated as needed.
+    runs {
+        client = {
+            // recommended logging data for a userdev environment
+            properties 'forge.logging.markers': 'SCAN,REGISTRIES,REGISTRYDUMP'
+            // recommended logging level for the console
+            properties 'forge.logging.console.level': 'debug'
+            workingDirectory project.file('run').canonicalPath
+            source sourceSets.main
+        }
+        server = {
+            // recommended logging data for a userdev environment
+            properties 'forge.logging.markers': 'SCAN,REGISTRIES,REGISTRYDUMP'
+            // recommended logging level for the console
+            properties 'forge.logging.console.level': 'debug'
+            workingDirectory project.file('run').canonicalPath
+            source sourceSets.main
+        }
+    }
 }
 
+//minecraft {
+//	version = "${config.mc_version}-${config.forge_version}"
+//    runDir = "run"
+//
+//    mappings = 'stable_39'
+//    makeObfSourceJar = false
+//}
+
 dependencies {
-	testCompile "junit:junit:4.11"
+    minecraft 'net.minecraftforge:forge:1.13.2-25.0.22'
+
+    testCompile "junit:junit:4.11"
     testCompile 'org.mockito:mockito-core:2.7.22'
 }
 
@@ -75,18 +118,30 @@ buildConfig {
     }
 }
 
+jar {
+    manifest {
+        attributes(["Specification-Title": "examplemod",
+                    "Specification-Vendor": "examplemodsareus",
+                    "Specification-Version": "24.0", // We are version 1 of the modlauncher specification
+                    "Implementation-Title": project.name,
+                    "Implementation-Version": "${version}",
+                    "Implementation-Vendor" :"examplemodsareus",
+                    "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")],)
+    }
+}
+
 processResources {
     // this will ensure that this task is redone when the versions change.
     inputs.property "mod_version", project.version
     inputs.property "mod_name", config.mod_name
-    inputs.property "mc_version", project.minecraft.version
+    inputs.property "mc_version", config.mc_version
 
     // replace stuff in mcmod.info, nothing else
     from(sourceSets.main.resources.srcDirs) {
         include 'mcmod.info'
 
         // replace variable
-        expand 'mod_name':config.mod_name, 'mod_version':project.version, 'mc_version':project.minecraft.version
+        expand 'mod_name':config.mod_name, 'mod_version':project.version, 'mc_version':config.mc_version
     }
 
     // copy everything else except the mcmod.info
